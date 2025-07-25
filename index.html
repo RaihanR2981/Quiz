@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathQuiz Indonesia - Quiz Matematika Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-30px,0); }
+            70% { transform: translate3d(0,-15px,0); }
+            90% { transform: translate3d(0,-4px,0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shine {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .bounce { animation: bounce 2s infinite; }
+        .pulse { animation: pulse 2s infinite; }
+        .shine {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200px 100%;
+            animation: shine 2s infinite;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 1000;
+            animation: confetti 3s linear infinite;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="text-3xl bounce">🧮</div>
+                    <h1 class="text-2xl font-bold">MathQuiz Indonesia</h1>
+                </div>
+                <div id="userInfo" class="hidden flex items-center space-x-4">
+                    <div class="text-sm">
+                        <span id="userName" class="font-semibold"></span>
+                        <span id="userClass" class="text-blue-200"></span>
+                    </div>
+                    <div class="text-sm">
+                        <span>Skor: </span>
+                        <span id="userScore" class="font-bold text-yellow-300">0</span>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm transition-colors">
+                        Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="max-w-md mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8 card-hover">
+                <div class="text-center mb-6">
+                    <div class="text-6xl mb-4 bounce">📚</div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Selamat Datang!</h2>
+                    <p class="text-gray-600">Masuk untuk mulai quiz matematika</p>
+                </div>
+                
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="fullName" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Masukkan nama lengkap">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input type="text" id="username" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Pilih username unik">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors shine">
+                        Masuk & Mulai Quiz
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <!-- Start Quiz Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4 pulse">🎯</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Mulai Quiz</h3>
+                        <p class="text-gray-600 mb-4">Uji kemampuan matematika Anda</p>
+                        <button onclick="startQuiz()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                            Mulai Quiz
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">📊</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Statistik</h3>
+                        <div class="space-y-2 text-sm">
+                            <div>Quiz Selesai: <span id="quizCount" class="font-bold text-blue-600">0</span></div>
+                            <div>Skor Terbaik: <span id="bestScore" class="font-bold text-green-600">0</span></div>
+                            <div>Total Skor: <span id="totalScore" class="font-bold text-purple-600">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">🏆</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Leaderboard</h3>
+                        <p class="text-gray-600 mb-4">Lihat peringkat terbaik</p>
+                        <button onclick="showLeaderboard()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                            Lihat Peringkat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Level Selection Modal -->
+    <div id="levelSelectionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <div class="text-4xl mb-4">🎓</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Pilih Jenjang Pendidikan</h3>
+                    <p class="text-gray-600">Pilih jenjang untuk memulai quiz</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <button onclick="selectQuizLevel('SD')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors card-hover">
+                        🏫 Sekolah Dasar (SD)
+                    </button>
+                    <button onclick="selectQuizLevel('SMP')" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors card-hover">
+                        🏢 Sekolah Menengah Pertama (SMP)
+                    </button>
+                    <button onclick="selectQuizLevel('SMA')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg transition-colors card-hover">
+                        🏛️ Sekolah Menengah Atas (SMA)
+                    </button>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button onclick="closeLevelSelection()" class="text-gray-500 hover:text-gray-700 text-sm">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Selection Modal -->
+    <div id="classSelectionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <div class="text-4xl mb-4">📚</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Pilih Kelas</h3>
+                    <p class="text-gray-600">Pilih kelas <span id="selectedLevelText"></span> untuk quiz</p>
+                </div>
+                
+                <div id="classButtons" class="grid grid-cols-2 gap-3">
+                    <!-- Class buttons will be populated by JavaScript -->
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button onclick="backToLevelSelection()" class="text-gray-500 hover:text-gray-700 text-sm mr-4">
+                        ← Kembali
+                    </button>
+                    <button onclick="closeClassSelection()" class="text-gray-500 hover:text-gray-700 text-sm">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <!-- Quiz Header -->
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Quiz Matematika</h3>
+                        <p id="quizLevelInfo" class="text-sm text-gray-600"></p>
+                    </div>
+                    <button onclick="closeQuiz()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Soal <span id="currentQuestion">1</span> dari <span id="totalQuestions">10</span></span>
+                        <span id="timeLeft">Waktu: 30s</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- Question -->
+                <div id="questionContainer" class="mb-6">
+                    <h4 id="questionText" class="text-lg font-medium text-gray-800 mb-4"></h4>
+                    <div id="optionsContainer" class="space-y-3"></div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex justify-between">
+                    <button id="prevBtn" onclick="previousQuestion()" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50" disabled>
+                        Sebelumnya
+                    </button>
+                    <button id="nextBtn" onclick="nextQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Selanjutnya
+                    </button>
+                    <button id="finishBtn" onclick="finishQuiz()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="resultsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6 text-center">
+                <div id="resultBadge" class="text-6xl mb-4"></div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Quiz Selesai!</h3>
+                <div id="scoreDisplay" class="text-4xl font-bold mb-4"></div>
+                <div id="percentageDisplay" class="text-lg text-gray-600 mb-4"></div>
+                <div id="motivationMessage" class="text-gray-700 mb-6"></div>
+                
+                <div class="space-y-3">
+                    <button onclick="reviewAnswers()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Review Jawaban
+                    </button>
+                    <button onclick="restartQuiz()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Main Lagi
+                    </button>
+                    <button onclick="closeResults()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Kembali ke Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Review Jawaban</h3>
+                    <button onclick="closeReview()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="reviewContent" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🏆 Leaderboard</h3>
+                    <button onclick="closeLeaderboard()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+
+
+                <!-- Filter -->
+                <div class="mb-4">
+                    <select id="leaderboardFilter" onchange="updateLeaderboard()" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">Semua Jenjang</option>
+                        <option value="SD">SD</option>
+                        <option value="SMP">SMP</option>
+                        <option value="SMA">SMA</option>
+                    </select>
+                </div>
+
+                <div id="leaderboardContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold mb-2">MathQuiz Indonesia</h3>
+                <p class="text-gray-400">Platform quiz matematika interaktif untuk siswa Indonesia</p>
+            </div>
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="text-blue-400 hover:text-blue-300">📘 Facebook</a>
+                <a href="#" class="text-blue-400 hover:text-blue-300">📱 Instagram</a>
+                <a href="#" class="text-blue-400 hover:text-blue-300">🐦 Twitter</a>
+            </div>
+            <p class="text-gray-500 text-sm">&copy; 2024 MathQuiz Indonesia. Dibuat dengan ❤️ untuk pendidikan Indonesia.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Global Variables
+        let currentUser = null;
+        let currentQuiz = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let quizTimer = null;
+        let timeLeft = 30;
+        let selectedQuizLevel = null;
+        let selectedQuizGrade = null;
+
+        // Question Banks by Grade
+        const questionBanks = {
+            'SD-1': [
+                {q: "2 + 3 = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "5 - 2 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "1 + 4 = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "6 - 3 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "3 + 2 = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "4 - 1 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "2 + 2 = ?", options: ["3", "4", "5", "6"], correct: 1},
+                {q: "7 - 4 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "1 + 3 = ?", options: ["3", "4", "5", "6"], correct: 1},
+                {q: "8 - 5 = ?", options: ["2", "3", "4", "5"], correct: 1}
+            ],
+            'SD-2': [
+                {q: "12 + 8 = ?", options: ["18", "19", "20", "21"], correct: 2},
+                {q: "15 - 7 = ?", options: ["7", "8", "9", "10"], correct: 1},
+                {q: "9 + 6 = ?", options: ["14", "15", "16", "17"], correct: 1},
+                {q: "18 - 9 = ?", options: ["8", "9", "10", "11"], correct: 1},
+                {q: "11 + 7 = ?", options: ["17", "18", "19", "20"], correct: 1},
+                {q: "16 - 8 = ?", options: ["7", "8", "9", "10"], correct: 1},
+                {q: "13 + 5 = ?", options: ["17", "18", "19", "20"], correct: 1},
+                {q: "20 - 6 = ?", options: ["13", "14", "15", "16"], correct: 1},
+                {q: "8 + 9 = ?", options: ["16", "17", "18", "19"], correct: 1},
+                {q: "14 - 5 = ?", options: ["8", "9", "10", "11"], correct: 1}
+            ],
+            'SD-3': [
+                {q: "3 × 4 = ?", options: ["10", "11", "12", "13"], correct: 2},
+                {q: "15 ÷ 3 = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "6 × 2 = ?", options: ["10", "11", "12", "13"], correct: 2},
+                {q: "18 ÷ 6 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "4 × 5 = ?", options: ["18", "19", "20", "21"], correct: 2},
+                {q: "21 ÷ 7 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "7 × 3 = ?", options: ["19", "20", "21", "22"], correct: 2},
+                {q: "24 ÷ 8 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "5 × 6 = ?", options: ["28", "29", "30", "31"], correct: 2},
+                {q: "27 ÷ 9 = ?", options: ["2", "3", "4", "5"], correct: 1}
+            ],
+            'SD-4': [
+                {q: "1,234 + 567 = ?", options: ["1,799", "1,801", "1,803", "1,805"], correct: 1},
+                {q: "2,000 - 789 = ?", options: ["1,209", "1,211", "1,213", "1,215"], correct: 1},
+                {q: "25 × 16 = ?", options: ["398", "400", "402", "404"], correct: 1},
+                {q: "324 ÷ 18 = ?", options: ["16", "17", "18", "19"], correct: 1},
+                {q: "3/4 + 1/4 = ?", options: ["3/8", "1", "5/4", "2"], correct: 1},
+                {q: "5/6 - 2/6 = ?", options: ["2/6", "3/6", "4/6", "1"], correct: 1},
+                {q: "0.5 + 0.3 = ?", options: ["0.7", "0.8", "0.9", "1.0"], correct: 0},
+                {q: "1.2 - 0.7 = ?", options: ["0.4", "0.5", "0.6", "0.7"], correct: 1},
+                {q: "45 × 23 = ?", options: ["1,033", "1,035", "1,037", "1,039"], correct: 1},
+                {q: "576 ÷ 24 = ?", options: ["22", "23", "24", "25"], correct: 1}
+            ],
+            'SD-5': [
+                {q: "12,345 + 6,789 = ?", options: ["19,132", "19,134", "19,136", "19,138"], correct: 1},
+                {q: "25,000 - 8,765 = ?", options: ["16,233", "16,235", "16,237", "16,239"], correct: 1},
+                {q: "125 × 48 = ?", options: ["5,998", "6,000", "6,002", "6,004"], correct: 1},
+                {q: "2,484 ÷ 36 = ?", options: ["67", "68", "69", "70"], correct: 2},
+                {q: "2/3 × 3/4 = ?", options: ["5/12", "6/12", "1/2", "2/3"], correct: 2},
+                {q: "5/6 ÷ 2/3 = ?", options: ["10/18", "5/4", "15/12", "10/9"], correct: 1},
+                {q: "Keliling persegi dengan sisi 12 cm = ?", options: ["44 cm", "46 cm", "48 cm", "50 cm"], correct: 2},
+                {q: "Luas persegi panjang 8×6 cm = ?", options: ["46 cm²", "48 cm²", "50 cm²", "52 cm²"], correct: 1},
+                {q: "156 × 73 = ?", options: ["11,386", "11,388", "11,390", "11,392"], correct: 1},
+                {q: "3,276 ÷ 42 = ?", options: ["76", "77", "78", "79"], correct: 2}
+            ],
+            'SD-6': [
+                {q: "√144 = ?", options: ["10", "11", "12", "13"], correct: 2},
+                {q: "2³ + 3² = ?", options: ["15", "16", "17", "18"], correct: 2},
+                {q: "25% dari 240 = ?", options: ["58", "60", "62", "64"], correct: 1},
+                {q: "3:4 = 15:? ", options: ["18", "20", "22", "24"], correct: 1},
+                {q: "Rata-rata dari 8, 6, 9, 7 = ?", options: ["7", "7.5", "8", "8.5"], correct: 1},
+                {q: "FPB dari 24 dan 36 = ?", options: ["10", "11", "12", "13"], correct: 2},
+                {q: "KPK dari 15 dan 20 = ?", options: ["58", "60", "62", "64"], correct: 1},
+                {q: "(-5) + 8 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "√169 = ?", options: ["11", "12", "13", "14"], correct: 2},
+                {q: "4² - 2³ = ?", options: ["6", "7", "8", "9"], correct: 2} 
+            ],
+            'SMP-7': [
+                {q: "2x + 5 = 11, x = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "(-3) × 4 = ?", options: ["-12", "-7", "12", "7"], correct: 0},
+                {q: "√16 = ?", options: ["2", "3", "4", "5"], correct: 2},
+                {q: "3² + 2² = ?", options: ["11", "12", "13", "14"], correct: 2},
+                {q: "15% dari 80 = ?", options: ["10", "11", "12", "13"], correct: 2},
+                {q: "2/3 + 1/6 = ?", options: ["3/9", "5/6", "1/2", "2/3"], correct: 1},
+                {q: "|-7| = ?", options: ["7", "-7", "0", "14"], correct: 0},
+                {q: "3x - 7 = 8, x = ?", options: ["3", "4", "5", "6"], correct: 2},
+                {q: "2⁴ = ?", options: ["8", "12", "16", "20"], correct: 2},
+                {q: "25% dari 60 = ?", options: ["12", "15", "18", "20"], correct: 1}
+            ],
+            'SMP-8': [
+                {q: "x² - 5x + 6 = 0, maka x = ?", options: ["2 atau 3", "1 atau 6", "2 atau 4", "1 atau 5"], correct: 0},
+                {q: "Gradien garis y = 3x + 2 adalah ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "Luas segitiga dengan alas 8 cm dan tinggi 6 cm = ?", options: ["22 cm²", "24 cm²", "26 cm²", "28 cm²"], correct: 1},
+                {q: "Pythagoras: jika a = 3 dan b = 4, maka c = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "Sin 30° = ?", options: ["1/3", "1/2", "√2/2", "√3/2"], correct: 1},
+                {q: "Cos 60° = ?", options: ["1/3", "1/2", "√2/2", "√3/2"], correct: 1},
+                {q: "2x² - 8 = 0, maka x = ?", options: ["±2", "±3", "±4", "±5"], correct: 0},
+                {q: "Persamaan garis melalui (0,3) dengan gradien 2 adalah ?", options: ["y=2x+3", "y=3x+2", "y=2x-3", "y=x+3"], correct: 0},
+                {q: "Keliling lingkaran r = 7 cm (π = 22/7) = ?", options: ["42 cm", "44 cm", "46 cm", "48 cm"], correct: 1},
+                {q: "Volume tabung r = 7, t = 10 (π = 22/7) = ?", options: ["1538 cm³", "1540 cm³", "1542 cm³", "1544 cm³"], correct: 1}
+            ],
+            'SMP-9': [
+                {q: "Jika f(x) = 2x + 3, maka f(5) = ?", options: ["11", "12", "13", "14"], correct: 2},
+                {q: "Sistem: x + y = 5, x - y = 1. Maka x = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "Barisan aritmatika: 2, 5, 8, ... Suku ke-10 = ?", options: ["27", "28", "29", "30"], correct: 2},
+                {q: "Deret geometri: 3, 6, 12, ... Suku ke-5 = ?", options: ["46", "47", "48", "49"], correct: 2},
+                {q: "Peluang munculnya angka genap pada dadu = ?", options: ["1/3", "1/2", "2/3", "3/4"], correct: 1},
+                {q: "Median dari data: 3, 7, 5, 9, 6 = ?", options: ["5", "6", "7", "8"], correct: 1},
+                {q: "Jika g(x) = x² - 4, maka g(3) = ?", options: ["3", "4", "5", "6"], correct: 2},
+                {q: "Sistem: 2x + y = 7, x + 2y = 8. Maka y = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "Barisan aritmatika: 5, 9, 13, ... Suku ke-8 = ?", options: ["31", "32", "33", "34"], correct: 2},
+                {q: "Deret geometri: 2, 6, 18, ... Suku ke-4 = ?", options: ["52", "53", "54", "55"], correct: 2}
+            ],
+            'SMA-10': [
+                {q: "f(x) = 2x + 3, f(2) = ?", options: ["5", "6", "7", "8"], correct: 2},
+                {q: "sin 30° = ?", options: ["1/2", "√2/2", "√3/2", "1"], correct: 0},
+                {q: "log₂ 8 = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "x² - 5x + 6 = 0, x = ?", options: ["2,3", "1,6", "2,4", "1,5"], correct: 0},
+                {q: "cos 60° = ?", options: ["1/2", "√2/2", "√3/2", "1"], correct: 0},
+                {q: "2ˣ = 16, x = ?", options: ["2", "3", "4", "5"], correct: 2},
+                {q: "tan 45° = ?", options: ["1/2", "1", "√3", "2"], correct: 1},
+                {q: "√(x+1) = 3, x = ?", options: ["7", "8", "9", "10"], correct: 1},
+                {q: "3ˣ = 27, x = ?", options: ["2", "3", "4", "5"], correct: 1},
+                {q: "sin² θ + cos² θ = ?", options: ["0", "1", "2", "π"], correct: 1}
+            ],
+            'SMA-11': [
+                {q: "∫₀² x² dx = ?", options: ["8/3", "4/3", "2/3", "16/3"], correct: 0},
+                {q: "Turunan kedua dari f(x) = x⁴ adalah ?", options: ["12x²", "4x³", "x³", "24x"], correct: 0},
+                {q: "Limit: lim(x→∞) (2x+1)/(x+3) = ?", options: ["1", "2", "3", "∞"], correct: 1},
+                {q: "Persamaan garis singgung y = x² di titik (1,1): ?", options: ["y=2x-1", "y=x+1", "y=2x+1", "y=x-1"], correct: 0},
+                {q: "Eksponen: 2^(x+1) = 8, maka x = ?", options: ["1", "2", "3", "4"], correct: 1},
+                {q: "Logaritma: log(x²) = 2log(x) untuk x > 0 adalah ?", options: ["Benar", "Salah", "Kadang", "Tidak pasti"], correct: 0},
+                {q: "Determinan matriks 3×3: [[1,0,2],[3,1,0],[2,1,1]] = ?", options: ["-1", "0", "1", "2"], correct: 2},
+                {q: "∫₁³ (2x-1) dx = ?", options: ["6", "7", "8", "9"], correct: 2},
+                {q: "d/dx [ln(x)] = ?", options: ["x", "1/x", "ln(x)", "e^x"], correct: 1},
+                {q: "Limit: lim(x→0) sin(x)/x = ?", options: ["0", "1", "∞", "tidak ada"], correct: 1}
+            ],
+            'SMA-12': [
+                {q: "Integral parsial: ∫ x·e^x dx = ?", options: ["xe^x - e^x + C", "xe^x + e^x + C", "x²e^x + C", "e^x + C"], correct: 0},
+                {q: "Deret Taylor sin(x) di x=0 suku pertama: ?", options: ["x", "1+x", "x-x³/6", "1-x²/2"], correct: 2},
+                {q: "Transformasi Laplace dari f(t) = e^(at): ?", options: ["1/(s-a)", "1/(s+a)", "a/(s-a)", "s/(s-a)"], correct: 0},
+                {q: "Persamaan diferensial: dy/dx = y, solusinya ?", options: ["y = Ce^x", "y = Cx", "y = C/x", "y = C+x"], correct: 0},
+                {q: "Konvergensi deret: Σ(1/n²) untuk n=1 hingga ∞ ?", options: ["Konvergen", "Divergen", "Tidak pasti", "Kondisional"], correct: 0},
+                {q: "Fungsi kompleks: |3+4i| = ?", options: ["4", "5", "6", "7"], correct: 1},
+                {q: "Matriks ortogonal memiliki sifat: A^T × A = ?", options: ["0", "I", "A", "A^(-1)"], correct: 1},
+                {q: "Ruang vektor R³ memiliki dimensi ?", options: ["2", "3", "4", "∞"], correct: 1},
+                {q: "∫₀^∞ e^(-x) dx = ?", options: ["0", "1", "e", "∞"], correct: 1},
+                {q: "Residue dari f(z) = 1/(z-1)² di z=1 adalah ?", options: ["0", "1", "2", "∞"], correct: 1}
+            ]
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUser();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Login form handler
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
+            });
+        }
+
+        function handleLogin() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const username = document.getElementById('username').value.trim();
+
+            if (!fullName || !username) {
+                alert('Mohon lengkapi semua field!');
+                return;
+            }
+
+            // Check if username already exists
+            const users = JSON.parse(localStorage.getItem('mathquiz_users') || '[]');
+            const existingUser = users.find(user => user.username === username);
+
+            if (existingUser) {
+                currentUser = existingUser;
+            } else {
+                currentUser = {
+                    fullName,
+                    username,
+                    scores: {
+                        SD: { totalScore: 0, quizCount: 0, bestScore: 0 },
+                        SMP: { totalScore: 0, quizCount: 0, bestScore: 0 },
+                        SMA: { totalScore: 0, quizCount: 0, bestScore: 0 }
+                    },
+                    totalScore: 0,
+                    quizCount: 0,
+                    bestScore: 0,
+                    createdAt: new Date().toISOString()
+                };
+                users.push(currentUser);
+                localStorage.setItem('mathquiz_users', JSON.stringify(users));
+            }
+
+            localStorage.setItem('mathquiz_currentUser', JSON.stringify(currentUser));
+            showDashboard();
+        }
+
+        function loadUser() {
+            const savedUser = localStorage.getItem('mathquiz_currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            
+            // Update user info in header
+            document.getElementById('userName').textContent = currentUser.fullName;
+            document.getElementById('userClass').textContent = `(@${currentUser.username})`;
+            document.getElementById('userScore').textContent = currentUser.totalScore;
+            
+            // Update stats
+            document.getElementById('quizCount').textContent = currentUser.quizCount;
+            document.getElementById('bestScore').textContent = currentUser.bestScore;
+            document.getElementById('totalScore').textContent = currentUser.totalScore;
+        }
+
+        function logout() {
+            localStorage.removeItem('mathquiz_currentUser');
+            currentUser = null;
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            
+            // Reset form
+            document.getElementById('loginForm').reset();
+        }
+
+        function startQuiz() {
+            // Show level selection modal first
+            document.getElementById('levelSelectionModal').classList.remove('hidden');
+        }
+
+        function selectQuizLevel(level) {
+            selectedQuizLevel = level;
+            document.getElementById('levelSelectionModal').classList.add('hidden');
+            document.getElementById('classSelectionModal').classList.remove('hidden');
+            
+            // Update selected level text
+            document.getElementById('selectedLevelText').textContent = level;
+            
+            // Populate class buttons based on selected level
+            const classButtons = document.getElementById('classButtons');
+            classButtons.innerHTML = '';
+            
+            let grades = [];
+            if (level === 'SD') {
+                grades = [1, 2, 3, 4, 5, 6];
+            } else if (level === 'SMP') {
+                grades = [7, 8, 9];
+            } else if (level === 'SMA') {
+                grades = [10, 11, 12];
+            }
+            
+            grades.forEach(grade => {
+                const button = document.createElement('button');
+                button.onclick = () => selectQuizGrade(grade);
+                button.className = 'bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-4 rounded-lg transition-colors card-hover';
+                button.textContent = `Kelas ${grade}`;
+                classButtons.appendChild(button);
+            });
+        }
+
+        function selectQuizGrade(grade) {
+            selectedQuizGrade = grade;
+            document.getElementById('classSelectionModal').classList.add('hidden');
+            
+            // Start the actual quiz with selected level and grade
+            const gradeKey = `${selectedQuizLevel}-${selectedQuizGrade}`;
+            const questions = questionBanks[gradeKey] || questionBanks['SD-1'];
+            
+            // Shuffle questions and options
+            currentQuiz = {
+                questions: shuffleArray([...questions]).slice(0, 10).map(q => ({
+                    ...q,
+                    shuffledOptions: shuffleArray([...q.options]),
+                    originalCorrect: q.correct
+                })),
+                startTime: new Date(),
+                level: selectedQuizLevel,
+                grade: selectedQuizGrade
+            };
+            
+            // Update correct answer index after shuffling
+            currentQuiz.questions.forEach(q => {
+                const correctAnswer = q.options[q.originalCorrect];
+                q.correct = q.shuffledOptions.indexOf(correctAnswer);
+                q.options = q.shuffledOptions;
+            });
+            
+            currentQuestionIndex = 0;
+            userAnswers = new Array(currentQuiz.questions.length).fill(null);
+            
+            document.getElementById('quizModal').classList.remove('hidden');
+            document.getElementById('totalQuestions').textContent = currentQuiz.questions.length;
+            document.getElementById('quizLevelInfo').textContent = `${selectedQuizLevel} Kelas ${selectedQuizGrade}`;
+            
+            showQuestion();
+            startTimer();
+        }
+
+        function closeLevelSelection() {
+            document.getElementById('levelSelectionModal').classList.add('hidden');
+            selectedQuizLevel = null;
+        }
+
+        function closeClassSelection() {
+            document.getElementById('classSelectionModal').classList.add('hidden');
+            selectedQuizLevel = null;
+            selectedQuizGrade = null;
+        }
+
+        function backToLevelSelection() {
+            document.getElementById('classSelectionModal').classList.add('hidden');
+            document.getElementById('levelSelectionModal').classList.remove('hidden');
+            selectedQuizGrade = null;
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function showQuestion() {
+            const question = currentQuiz.questions[currentQuestionIndex];
+            
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('questionText').textContent = question.q;
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = `w-full text-left p-3 border border-gray-300 rounded-md hover:bg-blue-50 transition-colors ${
+                    userAnswers[currentQuestionIndex] === index ? 'bg-blue-100 border-blue-500' : ''
+                }`;
+                button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                button.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+            
+            // Update progress bar
+            const progress = ((currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === currentQuiz.questions.length - 1) {
+                document.getElementById('nextBtn').classList.add('hidden');
+                document.getElementById('finishBtn').classList.remove('hidden');
+                updateFinishButton();
+            } else {
+                document.getElementById('nextBtn').classList.remove('hidden');
+                document.getElementById('finishBtn').classList.add('hidden');
+                updateNextButton();
+            }
+            
+            // Update timer display (don't reset timeLeft here)
+            updateTimer();
+        }
+
+        function selectAnswer(answerIndex) {
+            userAnswers[currentQuestionIndex] = answerIndex;
+            
+            // Update UI to show selection without resetting timer
+            const optionsContainer = document.getElementById('optionsContainer');
+            const buttons = optionsContainer.querySelectorAll('button');
+            
+            buttons.forEach((button, index) => {
+                if (index === answerIndex) {
+                    button.className = 'w-full text-left p-3 border border-blue-500 bg-blue-100 rounded-md hover:bg-blue-50 transition-colors';
+                } else {
+                    button.className = 'w-full text-left p-3 border border-gray-300 rounded-md hover:bg-blue-50 transition-colors';
+                }
+            });
+            
+            // Update navigation buttons based on current question
+            if (currentQuestionIndex === currentQuiz.questions.length - 1) {
+                updateFinishButton();
+            } else {
+                updateNextButton();
+            }
+        }
+
+        function updateFinishButton() {
+            const finishBtn = document.getElementById('finishBtn');
+            const unansweredCount = userAnswers.filter(answer => answer === null).length;
+            
+            if (unansweredCount > 0) {
+                finishBtn.disabled = true;
+                finishBtn.className = 'bg-gray-400 text-white font-medium py-2 px-4 rounded-md cursor-not-allowed opacity-50';
+                finishBtn.textContent = `Selesai (${unansweredCount} belum dijawab)`;
+            } else {
+                finishBtn.disabled = false;
+                finishBtn.className = 'bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors';
+                finishBtn.textContent = 'Selesai';
+            }
+        }
+
+        function updateNextButton() {
+            const nextBtn = document.getElementById('nextBtn');
+            const currentAnswer = userAnswers[currentQuestionIndex];
+            
+            if (currentAnswer === null) {
+                nextBtn.disabled = true;
+                nextBtn.className = 'bg-gray-400 text-white font-medium py-2 px-4 rounded-md cursor-not-allowed opacity-50';
+                nextBtn.textContent = 'Jawab dulu untuk lanjut';
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors';
+                nextBtn.textContent = 'Selanjutnya';
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                timeLeft = 30; // Reset timer when navigating
+                showQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            // Check if current question is answered
+            if (userAnswers[currentQuestionIndex] === null) {
+                alert('Silakan jawab pertanyaan ini terlebih dahulu sebelum melanjutkan!');
+                return;
+            }
+            
+            if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                currentQuestionIndex++;
+                timeLeft = 30; // Reset timer when navigating
+                showQuestion();
+            }
+        }
+
+        function startTimer() {
+            quizTimer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                
+                if (timeLeft <= 0) {
+                    // Auto move to next question or finish quiz
+                    if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                        currentQuestionIndex++;
+                        timeLeft = 30; // Reset timer for next question
+                        showQuestion();
+                    } else {
+                        finishQuiz();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            document.getElementById('timeLeft').textContent = `Waktu: ${timeLeft}s`;
+            if (timeLeft <= 10) {
+                document.getElementById('timeLeft').classList.add('text-red-600');
+            } else {
+                document.getElementById('timeLeft').classList.remove('text-red-600');
+            }
+        }
+
+        function finishQuiz() {
+            // Check if all questions are answered
+            const unansweredCount = userAnswers.filter(answer => answer === null).length;
+            if (unansweredCount > 0) {
+                alert(`Masih ada ${unansweredCount} soal yang belum dijawab! Silakan jawab semua soal terlebih dahulu.`);
+                return;
+            }
+            
+            clearInterval(quizTimer);
+            
+            // Calculate score
+            let correctAnswers = 0;
+            currentQuiz.questions.forEach((question, index) => {
+                if (userAnswers[index] === question.correct) {
+                    correctAnswers++;
+                }
+            });
+            
+            const score = correctAnswers * 10;
+            const percentage = (correctAnswers / currentQuiz.questions.length) * 100;
+            const quizLevel = currentQuiz.level;
+            
+            // Initialize scores object if it doesn't exist (for existing users)
+            if (!currentUser.scores) {
+                currentUser.scores = {
+                    SD: { totalScore: 0, quizCount: 0, bestScore: 0 },
+                    SMP: { totalScore: 0, quizCount: 0, bestScore: 0 },
+                    SMA: { totalScore: 0, quizCount: 0, bestScore: 0 }
+                };
+            }
+            
+            // Update level-specific stats
+            currentUser.scores[quizLevel].totalScore += score;
+            currentUser.scores[quizLevel].quizCount++;
+            if (score > currentUser.scores[quizLevel].bestScore) {
+                currentUser.scores[quizLevel].bestScore = score;
+            }
+            
+            // Update overall stats
+            currentUser.totalScore += score;
+            currentUser.quizCount++;
+            if (score > currentUser.bestScore) {
+                currentUser.bestScore = score;
+            }
+            
+            // Save updated user data
+
+// Kirim data skor ke server PHP-MySQL
+fetch('save_score.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        fullName: currentUser.fullName,
+        username: currentUser.username,
+        level: currentQuiz.level,
+        score: score
+    })
+});
+
+            const users = JSON.parse(localStorage.getItem('mathquiz_users') || '[]');
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('mathquiz_users', JSON.stringify(users));
+            }
+            localStorage.setItem('mathquiz_currentUser', JSON.stringify(currentUser));
+            
+            // Show results
+            showResults(score, percentage, correctAnswers);
+        }
+
+        function showResults(score, percentage, correctAnswers) {
+            document.getElementById('quizModal').classList.add('hidden');
+            document.getElementById('resultsModal').classList.remove('hidden');
+            
+            // Determine badge and message based on score
+            let badge, message, badgeColor;
+            if (percentage >= 90) {
+                badge = '🏆';
+                message = 'Luar biasa! Anda sangat menguasai materi!';
+                badgeColor = 'text-yellow-500';
+                if (percentage === 100) {
+                    createConfetti();
+                }
+            } else if (percentage >= 80) {
+                badge = '🥇';
+                message = 'Hebat! Hasil yang sangat baik!';
+                badgeColor = 'text-yellow-600';
+            } else if (percentage >= 70) {
+                badge = '🥈';
+                message = 'Bagus! Terus tingkatkan lagi!';
+                badgeColor = 'text-gray-500';
+            } else if (percentage >= 60) {
+                badge = '🥉';
+                message = 'Cukup baik, masih bisa lebih baik lagi!';
+                badgeColor = 'text-orange-600';
+            } else {
+                badge = '📚';
+                message = 'Jangan menyerah! Terus belajar dan berlatih!';
+                badgeColor = 'text-blue-600';
+            }
+            
+            document.getElementById('resultBadge').textContent = badge;
+            document.getElementById('resultBadge').className = `text-6xl mb-4 ${badgeColor}`;
+            document.getElementById('scoreDisplay').textContent = `${score}/100`;
+            document.getElementById('scoreDisplay').className = `text-4xl font-bold mb-4 ${badgeColor}`;
+            document.getElementById('percentageDisplay').textContent = `${correctAnswers}/${currentQuiz.questions.length} benar (${percentage.toFixed(1)}%)`;
+            document.getElementById('motivationMessage').textContent = message;
+            
+            // Update dashboard stats
+            document.getElementById('userScore').textContent = currentUser.totalScore;
+            document.getElementById('quizCount').textContent = currentUser.quizCount;
+            document.getElementById('bestScore').textContent = currentUser.bestScore;
+            document.getElementById('totalScore').textContent = currentUser.totalScore;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 5000);
+                }, i * 100);
+            }
+        }
+
+        function reviewAnswers() {
+            document.getElementById('resultsModal').classList.add('hidden');
+            document.getElementById('reviewModal').classList.remove('hidden');
+            
+            const reviewContent = document.getElementById('reviewContent');
+            reviewContent.innerHTML = '';
+            
+            currentQuiz.questions.forEach((question, index) => {
+                const isCorrect = userAnswers[index] === question.correct;
+                const userAnswer = userAnswers[index] !== null ? question.options[userAnswers[index]] : 'Tidak dijawab';
+                const correctAnswer = question.options[question.correct];
+                
+                const reviewItem = document.createElement('div');
+                reviewItem.className = `border rounded-lg p-4 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
+                
+                reviewItem.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${isCorrect ? '✅' : '❌'}</div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-800 mb-2">Soal ${index + 1}: ${question.q}</h4>
+                            <div class="space-y-1 text-sm">
+                                <div>
+                                    <span class="font-medium">Jawaban Anda:</span>
+                                    <span class="${isCorrect ? 'text-green-600' : 'text-red-600'}">${userAnswer}</span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Jawaban Benar:</span>
+                                    <span class="text-green-600">${correctAnswer}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                reviewContent.appendChild(reviewItem);
+            });
+        }
+
+        function showLeaderboard() {
+            document.getElementById('leaderboardModal').classList.remove('hidden');
+            updateLeaderboard();
+        }
+
+function updateLeaderboard() {
+    const filter = document.getElementById('leaderboardFilter').value;
+    fetch(`get_leaderboard.php?level=${filter}`)
+      .then(res => res.json())
+      .then(users => {
+        const leaderboardContent = document.getElementById('leaderboardContent');
+        leaderboardContent.innerHTML = '';
+        if (users.length === 0) {
+          leaderboardContent.innerHTML = '<p class="text-center text-gray-600">Belum ada data.</p>';
+          return;
+        }
+        const list = document.createElement('ul');
+        list.className = 'space-y-3';
+        users.forEach((user, index) => {
+          const li = document.createElement('li');
+          li.className = 'bg-white p-3 rounded shadow';
+          li.innerHTML = `<strong>#${index + 1}</strong> ${user.full_name} (${user.username}) - Skor: ${user.total_score}`;
+          list.appendChild(li);
+        });
+        leaderboardContent.appendChild(list);
+      });
+}
+
+        function restartQuiz() {
+            document.getElementById('resultsModal').classList.add('hidden');
+            startQuiz();
+        }
+
+        function closeQuiz() {
+            clearInterval(quizTimer);
+            document.getElementById('quizModal').classList.add('hidden');
+        }
+
+        function closeResults() {
+            document.getElementById('resultsModal').classList.add('hidden');
+        }
+
+        function closeReview() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.getElementById('resultsModal').classList.remove('hidden');
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboardModal').classList.add('hidden');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9638ac0d34e93fb3',t:'MTc1MzI0NzQzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
